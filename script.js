@@ -1,9 +1,9 @@
 // ================= SERVICE WORKER =================
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js') // safer for GitHub
-      .then(reg => console.log('✅ HealthGuardian SW Registered!'))
-      .catch(err => console.error('❌ SW Registration Failed:', err));
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(() => console.log('✅ SW Registered'))
+      .catch(err => console.error('❌ SW Failed:', err));
   });
 }
 
@@ -39,7 +39,7 @@ setInterval(() => {
 
     window.location.href = "vibration.html";
   }
-}, 10000); // faster + reliable
+}, 10000);
 
 // ================= UI =================
 function updatePointsDisplay() {
@@ -152,7 +152,7 @@ function login() {
   if (stored === p) {
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("currentUser", u);
-    window.location.href = "dashboard.html"; // FIXED
+    window.location.href = "dashboard.html";
   } else {
     alert("Wrong password ❌");
   }
@@ -170,7 +170,7 @@ function openVibration() { window.location.href = "vibration.html"; }
 function logout() {
   localStorage.removeItem("loggedIn");
   localStorage.removeItem("currentUser");
-  window.location.href = "index.html"; // FIXED
+  window.location.href = "index.html";
 }
 
 // ================= DARK MODE =================
@@ -217,7 +217,7 @@ function addMedicine() {
   localStorage.setItem("medicines", JSON.stringify(meds));
   addHistory("Added: " + name);
 
-  window.location.href = "dashboard.html"; // FIXED
+  window.location.href = "dashboard.html";
 }
 
 function displayMedicines() {
@@ -225,14 +225,13 @@ function displayMedicines() {
   if (!container) return;
 
   const meds = JSON.parse(localStorage.getItem("medicines")) || [];
-  const validMeds = meds.filter(m => m.name && m.name.trim() !== "");
 
-  if (validMeds.length === 0) {
+  if (meds.length === 0) {
     container.innerHTML = "<p style='color:white;text-align:center;'>No medicines added today.</p>";
     return;
   }
 
-  container.innerHTML = validMeds.map((m) => `
+  container.innerHTML = meds.map((m) => `
     <div class="glass-item" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:15px;background:rgba(255,255,255,0.1);border-radius:12px;opacity:${m.isHandled ? '0.5':'1'}">
       <div>
         <strong style="color:white;">${m.name}</strong> (${m.dose})<br>
@@ -266,6 +265,29 @@ function loadHistory() {
 }
 
 // ================= CONTACT =================
+function saveContact() {
+  let name = document.getElementById("contactName")?.value.trim();
+  let phone = document.getElementById("contactPhone")?.value.trim();
+
+  if (!name || !phone) {
+    alert("⚠️ Please fill all fields");
+    return;
+  }
+
+  let cleanPhone = phone.replace(/\D/g, "");
+
+  if (cleanPhone.length < 10) {
+    alert("⚠️ Enter valid phone number");
+    return;
+  }
+
+  localStorage.setItem("contactName", name);
+  localStorage.setItem("contactPhone", cleanPhone);
+
+  alert("✅ Contact saved!");
+  loadSavedContact();
+}
+
 function loadSavedContact() {
   let name = localStorage.getItem("contactName");
   let phone = localStorage.getItem("contactPhone");
@@ -279,10 +301,17 @@ function loadSavedContact() {
 // ================= SOS =================
 function openSOS() {
   let phone = localStorage.getItem("contactPhone");
-  if (!phone) return alert("⚠️ No emergency contact found!");
+
+  if (!phone) {
+    alert("⚠️ No emergency contact found!");
+    return;
+  }
 
   let cleanPhone = phone.replace(/\D/g, "");
-  if (cleanPhone.length === 10) cleanPhone = "91" + cleanPhone;
+
+  if (cleanPhone.length === 10) {
+    cleanPhone = "91" + cleanPhone;
+  }
 
   const message = "🚨 Emergency! Please check on me (MediMate)";
   window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
